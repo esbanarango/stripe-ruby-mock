@@ -113,7 +113,7 @@ shared_examples 'Charge API' do
     expect(data[charge2.id][:amount]).to eq(777)
   end
 
-  it "retrieves a stripe charge" do
+  it "retrieves a stripe charge", live: true do
     original = Stripe::Charge.create({
       amount: 777,
       currency: 'USD',
@@ -125,18 +125,17 @@ shared_examples 'Charge API' do
     expect(charge.amount).to eq(original.amount)
   end
 
-  it "cannot retrieve a charge that doesn't exist" do
+  it "cannot retrieve a charge that doesn't exist", live: true do
     expect { Stripe::Charge.retrieve('nope') }.to raise_error {|e|
       expect(e).to be_a Stripe::InvalidRequestError
-      expect(e.param).to eq('charge')
+      expect(e.param).to eq('id')
       expect(e.http_status).to eq(404)
     }
   end
 
-  it "updates a stripe charge" do
+  it "updates a stripe charge", live: true do
     original = Stripe::Charge.create({
-      amount: 777,
-      currency: 'USD',
+      amount: 777, currency: 'USD',
       source: stripe_helper.generate_card_token,
       description: 'Original description',
     })
@@ -156,7 +155,7 @@ shared_examples 'Charge API' do
     expect(updated.fraud_details.to_hash).to eq(charge.fraud_details.to_hash)
   end
 
-  it "disallows most parameters on updating a stripe charge" do
+  it 'disallows most parameters on updating a stripe charge', live: true do
     original = Stripe::Charge.create({
       amount: 777,
       currency: 'USD',
@@ -169,11 +168,15 @@ shared_examples 'Charge API' do
     charge.amount = 777
     charge.source = {any: "source"}
 
-    expect { charge.save }.to raise_error(Stripe::InvalidRequestError, /Received unknown parameters: currency, amount, source/i)
+    expect { charge.save }.to raise_error{ |e|
+                                expect(e).to be_a Stripe::InvalidRequestError
+                                expect(e.param).to eq('source')
+                                expect(e.http_status).to eq(400)
+                              }
   end
 
 
-  it "creates a unique balance transaction" do
+  it "creates a unique balance transaction", live: true do
     charge1 = Stripe::Charge.create(
       amount: 999,
       currency: 'USD',
@@ -224,7 +227,7 @@ shared_examples 'Charge API' do
     end
   end
 
-  describe 'captured status value' do
+  describe 'captured status value', live: true do
     it "reports captured by default" do
       charge = Stripe::Charge.create({
         amount: 777,
@@ -258,7 +261,7 @@ shared_examples 'Charge API' do
     end
   end
 
-  describe "two-step charge (auth, then capture)" do
+  describe "two-step charge (auth, then capture)", live: true do
     it "changes captured status upon #capture" do
       charge = Stripe::Charge.create({
         amount: 777,

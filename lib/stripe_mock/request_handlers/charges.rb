@@ -39,10 +39,13 @@ module StripeMock
 
         charge = assert_existence :charge, id, charges[id]
 
+        params.delete(:source) if params[:source] == {}
+        params.delete(:refunds) if params[:refunds] == { data: nil }
+
         allowed = [:description, :metadata, :receipt_email, :fraud_details]
         disallowed = params.keys - allowed
         if disallowed.count > 0
-          raise Stripe::InvalidRequestError.new("Received unknown parameters: #{disallowed.join(', ')}" , '', 400)
+          raise Stripe::InvalidRequestError.new("Received unknown parameters: #{disallowed.join(',')}" , disallowed.last.to_s, 400)
         end
 
         charges[id] = charge.merge(params)
@@ -63,7 +66,7 @@ module StripeMock
 
       def get_charge(route, method_url, params, headers)
         route =~ method_url
-        assert_existence :charge, $1, charges[$1]
+        assert_existence :id, $1, charges[$1]
       end
 
       def capture_charge(route, method_url, params, headers)

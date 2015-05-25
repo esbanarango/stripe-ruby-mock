@@ -43,8 +43,6 @@ module StripeMock
         refunded: false,
         fee: 0,
         status: 'succeeded',
-        fee_details: [
-        ],
         source: {
           object: "card",
           last4: "4242",
